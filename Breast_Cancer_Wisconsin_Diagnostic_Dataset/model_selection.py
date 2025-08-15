@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from torch.utils.data import DataLoader
@@ -39,7 +39,7 @@ def eval_models():
     params_xg = {
         'n_estimators': [50, 100, 200, 300],
         'max_depth': [2, 4, 6, 8],
-        'alpha': [1, 2, 5, 10],
+        'alpha': [0, 0.5, 1, 2, 5, 10],
         'learning_rate': [0.01, 0.05, 0.1],
     }
     grid_search_xgb = GridSearchCV(
@@ -71,7 +71,7 @@ def eval_models():
         'kernel': ['rbf', 'linear', 'poly'],
         'C': [0.1, 1, 2, 5, 10],
         'degree': [2, 3, 5],
-        'gamma': [0.001, 0.01, 0.1, 0.5, 1],
+        'gamma': [0.001, 0.01, 0.1, 0.5, 1, 'scale'],
     }
     grid_search_svm = GridSearchCV(
         estimator=svm.SVC(),
@@ -89,7 +89,7 @@ def eval_models():
     # Multi Layer Perceptron
     param_mlp = {
         'learning_rate': [0.0001, 0.001, 0.005, 0.01, 0.05],
-        'hidden_layers': [[20], [50], [50,50], [100], [20, 20, 20]],
+        'hidden_layers': [[20], [50], [50,50], [100], [100, 50], [20, 20, 20]],
     }
     mlp_best_params, mlp_best_acc = utils.grid_search_MLP(X_train_scaled, y_train,5, param_mlp)
 
@@ -189,8 +189,11 @@ def eval_models():
         print(f" Accuracy: {acc/len(y_true):.4f}%")
         print(f" Total Number of Errors: {len(y_true)-acc}")
         plt.figure()
+        #y_true = le.inverse_transform(y_true)
+        #model_pred = le.inverse_transform(model_pred)
         cm = confusion_matrix(y_true, model_pred)
-        sns.heatmap(cm, annot=True, fmt='d', cmap='inferno')
+        custom_labels = ['Benign', 'Malicious']
+        sns.heatmap(cm, annot=True, fmt='d', cmap='inferno', xticklabels=custom_labels, yticklabels=custom_labels)
         plt.title(f'Confusion Matrix: {model_name}')
         plt.xlabel('Predicted Label')
         plt.ylabel('True Label')
